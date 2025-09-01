@@ -1,4 +1,4 @@
-🛒 M2_Ecom – Spring Boot + PostgreSQL + Docker Compose
+🛒  ##M2_Ecom – Spring Boot + PostgreSQL + Docker Compose
 This project is a Spring Boot e-commerce application integrated with a PostgreSQL database and pgAdmin for database management, orchestrated using Docker Compose. It includes configurations to handle timezone and authentication issues for seamless connectivity.
 
 📌 Prerequisites
