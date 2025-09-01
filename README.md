@@ -1,26 +1,32 @@
-🛒  ##M2_Ecom – Spring Boot + PostgreSQL + Docker Compose
-This project is a Spring Boot e-commerce application integrated with a PostgreSQL database and pgAdmin for database management, orchestrated using Docker Compose. It includes configurations to handle timezone and authentication issues for seamless connectivity.
+# 🛒 M2_Ecom – Spring Boot + PostgreSQL + Docker Compose
 
-📌 Prerequisites
+A Spring Boot e-commerce app with PostgreSQL and pgAdmin, using Docker Compose for seamless setup and timezone/auth handling.
 
-Docker
-Docker Compose
-Maven
-JDK 17 or higher
+## 📌 Prerequisites
 
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Maven](https://maven.apache.org/)
+- [JDK 17+](https://adoptium.net/)
 
-📂 Project Structure
+## 📂 Project Structure
+
+```
 M2_Ecom/
 ├── src/                    # Spring Boot source code
 ├── pom.xml                # Maven dependencies
-├── docker-compose.yml     # Docker Compose configuration
-├── application.properties # Spring Boot configuration
-└── README.md             # Project documentation
+├── docker-compose.yml     # Docker Compose config
+├── init.sql               # Database init script
+├── application.properties # Spring Boot config
+└── README.md             # Project docs
+```
 
+## ⚙️ Configuration
 
-⚙️ Configuration
-docker-compose.yml
-Sets up PostgreSQL and pgAdmin, creating the ecomdb database automatically.
+### `docker-compose.yml`
+Sets up PostgreSQL and pgAdmin, auto-creating `ecomdb`.
+
+```yaml
 version: '3.8'
 services:
   postgres:
@@ -59,12 +65,17 @@ networks:
 volumes:
   postgres:
   pgadmin:
+```
 
-init.sql (create in the same directory):
+**`init.sql`** (create in project root):
+```sql
 CREATE DATABASE ecomdb;
+```
 
-application.properties
-Configures Spring Boot to connect to PostgreSQL with proper timezone settings.
+### `application.properties`
+Connects Spring Boot to PostgreSQL with `Asia/Kolkata` timezone.
+
+```properties
 spring.application.name=M2_Ecom
 
 # PostgreSQL Configuration
@@ -93,128 +104,138 @@ info.app.name=LPU_APP
 info.app.description=Learning Purpose Application
 info.app.version=1.0.0
 info.app.contact.name=John Doe
+```
 
+## 🚀 Running the Application
 
-🚀 Running the Application
-1️⃣ Start PostgreSQL and pgAdmin
-docker-compose up -d
+1. **Start PostgreSQL and pgAdmin**  
+   ```bash
+   docker-compose up -d
+   ```
+   - PostgreSQL: `localhost:5432`
+   - pgAdmin: `http://localhost:5050`
+     - Email: `pgadmin4@pgadmin.org`
+     - Password: `admin`
 
+   **Configure pgAdmin**:
+   - Log in to pgAdmin.
+   - Add server:
+     - Host: `postgres_container`
+     - Port: `5432`
+     - Username: `root`
+     - Password: `root`
+     - Database: `ecomdb`
 
-PostgreSQL: localhost:5432
-pgAdmin: http://localhost:5050
-Email: pgadmin4@pgadmin.org
-Password: admin
+2. **Build and Run Spring Boot**  
+   Set JVM timezone to avoid `Asia/Calcutta` errors:
+   ```powershell
+   $env:JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+   ```
+   Build and run:
+   ```bash
+   mvn clean package
+   mvn spring-boot:run
+   ```
+   Or run JAR:
+   ```bash
+   java -Duser.timezone=Asia/Kolkata -jar target/M2_Ecom-0.0.1-SNAPSHOT.jar
+   ```
+   **In IntelliJ**:
+   - Add `-Duser.timezone=Asia/Kolkata` to `Run > Edit Configurations > VM options`.
 
+3. **Verify Database Connection**  
+   In `psql`:
+   ```bash
+   docker exec -it postgres_container psql -U root -d ecomdb
+   ```
+   Run:
+   ```sql
+   SELECT current_database(), current_user, current_setting('TimeZone');
+   ```
+   Expected:
+   ```
+    current_database | current_user | current_setting
+   ------------------|--------------|-----------------
+    ecomdb           | root         | Asia/Kolkata
+   ```
 
+4. **Access the Application**  
+   - REST API: `http://localhost:8080`
+   - Actuator: `http://localhost:8080/actuator`
 
-Configure pgAdmin:
+## 🛑 Stopping Containers
 
-Log in to pgAdmin.
-Add a server:
-Host: postgres_container
-Port: 5432
-Username: root
-Password: root
-Database: ecomdb
-
-
-
-2️⃣ Build and Run Spring Boot
-Set the JVM timezone to avoid Asia/Calcutta errors:
-$env:JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
-
-Build and run:
-mvn clean package
-mvn spring-boot:run
-
-Or run the JAR:
-java -Duser.timezone=Asia/Kolkata -jar target/M2_Ecom-0.0.1-SNAPSHOT.jar
-
-In IntelliJ:
-
-Add -Duser.timezone=Asia/Kolkata to Run > Edit Configurations > VM options.
-
-3️⃣ Verify Database Connection
-In psql:
-docker exec -it postgres_container psql -U root -d ecomdb
-
-Run:
-SELECT current_database(), current_user, current_setting('TimeZone');
-
-Expected:
- current_database | current_user | current_setting
-------------------|--------------|-----------------
- ecomdb           | root         | Asia/Kolkata
-
-4️⃣ Access the Application
-
-REST API: http://localhost:8080
-Actuator: http://localhost:8080/actuator
-
-
-🛑 Stopping Containers
+```bash
 docker-compose down
-
-Clear database data:
+```
+Clear database:
+```bash
 docker-compose down -v
+```
 
+## 🧰 Useful Commands
 
-🧰 Useful Commands
+- List containers: `docker ps`
+- Access PostgreSQL: `docker exec -it postgres_container psql -U root -d ecomdb`
+- Check timezone: `SHOW TIMEZONE;`
+- View logs: `docker logs postgres_container`
 
-List containers:docker ps
+## 🐞 Troubleshooting
 
+- **Authentication Error**:
+  - Check for conflicting PostgreSQL:
+    ```powershell
+    netstat -ano | findstr :5432
+    ```
+  - Stop local PostgreSQL:
+    ```powershell
+    net stop postgresql-x64-XX
+    ```
+  - Reset container:
+    ```bash
+    docker compose down -v
+    docker compose up -d
+    ```
+- **Timezone Error**:
+  - Use `?timezone=Asia/Kolkata` in `spring.datasource.url`.
+  - Set `-Duser.timezone=Asia/Kolkata`.
+- **Database Not Found**:
+  - Verify `ecomdb`:
+    ```bash
+    docker exec -it postgres_container psql -U root -d postgres -c "\l"
+    ```
+- **Debug Logs**:
+  ```properties
+  logging.level.org.springframework=DEBUG
+  logging.level.org.hibernate=DEBUG
+  logging.level.org.postgresql=DEBUG
+  ```
 
-Access PostgreSQL:docker exec -it postgres_container psql -U root -d ecomdb
+## 🔐 Security Note
 
-
-Check timezone:SHOW TIMEZONE;
-
-
-View logs:docker logs postgres_container
-
-
-
-
-🐞 Troubleshooting
-
-Authentication Error (FATAL: password authentication failed for user "root"):
-Check for conflicting PostgreSQL instances:netstat -ano | findstr :5432
-
-Stop local PostgreSQL:net stop postgresql-x64-XX
-
-
-Reset container:docker compose down -v
-docker compose up -d
-
-
-
-
-Timezone Error (FATAL: invalid value for parameter "TimeZone": "Asia/Calcutta"):
-Ensure ?timezone=Asia/Kolkata in spring.datasource.url.
-Set -Duser.timezone=Asia/Kolkata.
-
-
-Database Not Found:
-Verify ecomdb exists:docker exec -it postgres_container psql -U root -d postgres -c "\l"
-
-
-
-
-Debug Logs:logging.level.org.springframework=DEBUG
-logging.level.org.hibernate=DEBUG
-logging.level.org.postgresql=DEBUG
-
-
-
-
-🔐 Security Note
 Use secure credentials in production:
+1. Create `.env`:
+   ```env
+   POSTGRES_USER=secure_user
+   POSTGRES_PASSWORD=secure_password
+   PGADMIN_DEFAULT_EMAIL=your_email@example.com
+   PGADMIN_DEFAULT_PASSWORD=secure_password
+   ```
+2. Update `application.properties`:
+   ```properties
+   spring.datasource.username=${POSTGRES_USER}
+   spring.datasource.password=${POSTGRES_PASSWORD}
+   ```
+3. Update `docker-compose.yml`:
+   ```yaml
+   environment:
+     POSTGRES_USER: ${POSTGRES_USER}
+     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+   ```
 
-Create .env:POSTGRES_USER=secure_user
-POSTGRES_PASSWORD=secure_password
+## 📚 Resources
 
-
-Update application.properties and docker-compose.yml to use environment variables.
-
-
-
+- [Spring Boot](https://docs.spring.io/spring-boot/docs/current/reference/html/)
+- [PostgreSQL JDBC](https://jdbc.postgresql.org/)
+- [Docker Compose](https://docs.docker.com/compose/)
+- [pgAdmin](https://www.pgadmin.org/docs/)
