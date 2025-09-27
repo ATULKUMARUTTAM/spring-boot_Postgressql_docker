@@ -20,14 +20,132 @@ M2_Ecom/
 ```
 
 ## ⚙️ Configuration
-### `docker-compose.yml`
-Defines three services:
-- **db**: PostgreSQL database
-- **app**: Spring Boot application
-- **pgadmin**: pgAdmin for database management
 
 ### `Dockerfile`
-Builds the Spring Boot application image using `openjdk:21-jdk`.
+```dockerfile
+FROM openjdk:21-jdk
+WORKDIR /app
+COPY target/myapp.jar app.jar
+ENTRYPOINT ["java","-jar","app.jar"]
+```
+
+### `docker-compose.yml`
+```yaml
+version: '3.8'
+services:
+  db:
+    image: postgres:latest
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: ecomdb
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    networks:
+      - ecom-network
+  app:
+    build: .
+    container_name: springboot-app
+    ports:
+      - "8080:8085"
+    depends_on:
+      - db
+    networks:
+      - ecom-network
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - ecom-network
+networks:
+  ecom-network:
+    driver: bridge
+```
+
+### `pom.xml`
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.5.0</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.atuluttam</groupId>
+	<artifactId>M2_Ecom</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>M2_Ecom</name>
+	<description>Demo project for Spring Boot</description>
+	<url/>
+	<licenses>
+		<license/>
+	</licenses>
+	<developers>
+		<developer/>
+	</developers>
+	<scm>
+		<connection/>
+		<developerConnection/>
+		<tag/>
+		<url/>
+	</scm>
+	<properties>
+		<java.version>21</java.version>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.7.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+			<version>3.5.0</version>
+		</dependency>
+	</dependencies>
+	<build>
+		<finalName>myapp</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+```
 
 ### `application.properties`
 Configures the Spring Boot application to connect to the PostgreSQL database with JPA/Hibernate settings.
